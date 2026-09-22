@@ -80,7 +80,7 @@ function normalizeSchoolData() {
             .trim()
             .padStart(3, "0"),
 
-        nombre: school.nombre || "Escuela sin nombre",
+        nombre: school.nombre || "Plantel sin nombre",
 
         cct: school.cct || "Sin CCT",
 
@@ -561,9 +561,8 @@ function showAGEBInformation(feature) {
                     </span>
 
                     <span>
-                        ${formatNumber(school[currentField])}
-                        alumnos ·
-                        ${formatPercent(schoolChange)}
+                        ${school.sin_proyeccion ? "Sin proyección" : formatNumber(school[currentField])}
+                        ${school.sin_proyeccion ? "" : "estudiantes · " + formatPercent(schoolChange)}
                     </span>
                 </button>
             `;
@@ -584,7 +583,7 @@ function showAGEBInformation(feature) {
                 <span>Matrícula:</span>
                 <strong>${formatNumber(totalEnrollment)}</strong>
 
-                <span>Escuelas:</span>
+                <span>Planteles:</span>
                 <strong>${formatNumber(schools.length)}</strong>
 
                 <span>Cambio acumulado:</span>
@@ -593,13 +592,13 @@ function showAGEBInformation(feature) {
         </section>
 
         <section class="ageb-school-list">
-            <h3>Escuelas en el AGEB</h3>
+            <h3>Planteles en el AGEB</h3>
 
             ${
                 !showSchools
-                    ? "<p>La lista de escuelas está desactivada en el control de capas.</p>"
+                    ? "<p>La lista de planteles está desactivada en el control de capas.</p>"
                     : schoolsHTML ||
-                      "<p>No hay escuelas que coincidan con los filtros.</p>"
+                      "<p>No hay planteles que coincidan con los filtros.</p>"
             }
         </section>
     `;
@@ -641,7 +640,7 @@ function showAlcaldiaInformation(feature) {
                 <span>Clave:</span><strong>${escapeHTML(mun)}</strong>
                 <span>Ciclo:</span><strong>${currentYear.label}</strong>
                 <span>Matrícula:</span><strong>${formatNumber(current)}</strong>
-                <span>Escuelas:</span><strong>${formatNumber(schools.length)}</strong>
+                <span>Planteles:</span><strong>${formatNumber(schools.length)}</strong>
                 <span>Cambio acumulado:</span><strong>${formatPercent(change)}</strong>
             </div>
         </section>`;
@@ -671,7 +670,7 @@ function selectSchoolById(identifier) {
     );
 
     if (!school) {
-        console.warn("No se encontró la escuela:", identifier);
+        console.warn("No se encontró el plantel:", identifier);
         return;
     }
 
@@ -749,7 +748,7 @@ function initializeLayerControls() {
 
     /*
      * La base actual no contiene coordenadas individuales
-     * de las escuelas. Este control determina si las escuelas
+     * de los planteles. Este control determina si los planteles
      * aparecen dentro de la ficha del AGEB.
      */
     schoolsCheckbox?.addEventListener("change", () => {

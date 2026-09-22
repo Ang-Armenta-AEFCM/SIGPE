@@ -136,7 +136,7 @@ function updateTerritoryUI() {
     const status = byId("mapStatusText");
     if (status) status.innerHTML = isAlcaldia
         ? '<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Selecciona una alcaldía para consultar su evolución y la comparación con CONAPO.'
-        : '<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Selecciona un AGEB para consultar sus escuelas.';
+        : '<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Selecciona un AGEB para consultar sus planteles.';
 }
 
 

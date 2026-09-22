@@ -7,7 +7,7 @@ function setDetailMode(mode) {
     const alcaldiaMode = mode === "alcaldia";
     const title = byId("detailsTitle");
     if (title) title.textContent = schoolMode
-        ? "Información de la escuela"
+        ? "Información del plantel"
         : alcaldiaMode
             ? "Información de la alcaldía"
             : "Información del AGEB";
@@ -106,6 +106,14 @@ function selectSchool(school) {
     SIGPE.selectedTerritoryFeature = null;
     SIGPE.selectedTerritoryType = null;
 
+    if (school.sin_proyeccion) {
+        byId("schoolInfo").innerHTML = `<div class="school-detail-header"><div><h2>${escapeHTML(school.nombre)}</h2><p>${escapeHTML(school.nivel)} · ${escapeHTML(school.alcaldia)}</p></div></div><div class="school-information-grid"><span>CCT</span><strong>${escapeHTML(school.cct)}</strong><span>Proyección</span><strong>Sin datos disponibles</strong></div>`;
+        byId("projectionTable").innerHTML = "<p>Sin proyección disponible para este CCT.</p>";
+        byId("similarSchools").innerHTML = "";
+        destroySchoolChart();
+        openSidebar();
+        return;
+    }
     renderSchoolInformation(school);
     renderProjectionTable(school);
     renderSchoolChart(school);
@@ -270,7 +278,7 @@ function renderSimilarSchools(school) {
     if (candidates.length === 0) {
         container.innerHTML = `
             <p class="empty-message">
-                No se encontraron escuelas similares.
+                No se encontraron planteles similares.
             </p>
         `;
 
@@ -327,7 +335,7 @@ function calculateAverageAnnualGrowth(school) {
 function downloadSchoolCSV(school) {
     const headers = [
         "CCT",
-        "Escuela",
+        "Plantel",
         "Nivel",
         "Alcaldía",
         "Ciclo",

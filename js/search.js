@@ -76,7 +76,7 @@ function renderSearchResults(query) {
     if (matches.length === 0) {
         container.innerHTML = `
             <div class="search-empty">
-                No se encontraron escuelas.
+                No se encontraron planteles.
             </div>
         `;
 

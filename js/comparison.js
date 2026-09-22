@@ -21,7 +21,7 @@ function addSchoolComparison(school) {
 
     if (SIGPE.comparison.length >= 3) {
         alert(
-            "Solo puedes comparar hasta tres escuelas."
+            "Solo puedes comparar hasta tres planteles."
         );
 
         return;
@@ -66,8 +66,8 @@ function ensureComparisonModal() {
         <div class="comparison-dialog">
             <div class="comparison-header">
                 <div>
-                    <h2>Comparación de escuelas</h2>
-                    <p>Hasta tres escuelas</p>
+                    <h2>Comparación de planteles</h2>
+                    <p>Hasta tres planteles</p>
                 </div>
 
                 <button
@@ -128,7 +128,7 @@ function renderComparison() {
     if (!schoolsContainer || !tableContainer) return;
 
     if (SIGPE.comparison.length === 0) {
-        schoolsContainer.innerHTML = '<p class="empty-message">No hay escuelas agregadas a la comparación.</p>';
+        schoolsContainer.innerHTML = '<p class="empty-message">No hay planteles agregadas a la comparación.</p>';
         tableContainer.innerHTML = "";
         destroyComparisonChart();
         return;
@@ -147,7 +147,7 @@ function renderComparison() {
                     onclick="removeSchoolComparison('${escapeAttribute(
                         school.cct
                     )}')"
-                    aria-label="Quitar escuela"
+                    aria-label="Quitar plantel"
                 >
                     ✕
                 </button>

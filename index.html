@@ -26,9 +26,9 @@
 
         <div class="topbar-actions">
             <div class="search-box">
-                <label class="sr-only" for="searchInput">Buscar escuela por nombre, CCT o alcaldía</label>
+                <label class="sr-only" for="searchInput">Buscar plantel por nombre, CCT o alcaldía</label>
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                <input id="searchInput" type="search" placeholder="Buscar escuela, CCT o alcaldía..." autocomplete="off" spellcheck="false">
+                <input id="searchInput" type="search" placeholder="Buscar plantel, CCT o alcaldía..." autocomplete="off" spellcheck="false">
                 <div id="searchResults" class="search-results" role="listbox" aria-label="Resultados de búsqueda"></div>
             </div>
 
@@ -169,7 +169,7 @@
                     <label id="schoolsLayerOption" class="layer-option">
                         <input id="chkEscuelas" type="checkbox" checked>
                         <span class="layer-option-text">
-                            <strong>Escuelas</strong>
+                            <strong>Planteles</strong>
                             <small>Listado asociado a cada AGEB</small>
                         </span>
                     </label>
@@ -184,7 +184,7 @@
 
                 <div class="stats-grid">
                     <article class="stat-card">
-                        <span class="stat-label">Escuelas</span>
+                        <span class="stat-label">Planteles</span>
                         <strong id="totalEscuelas">—</strong>
                     </article>
 
@@ -257,16 +257,16 @@
             <div class="map-status">
                 <span id="mapStatusText">
                     <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    Selecciona un AGEB para consultar sus escuelas.
+                    Selecciona un AGEB para consultar sus planteles.
                 </span>
             </div>
         </section>
 
-        <aside id="detailsPanel" class="details-panel" aria-label="Detalle de escuela">
+        <aside id="detailsPanel" class="details-panel" aria-label="Detalle de plantel">
             <div class="details-header">
                 <div>
                     <span class="panel-kicker">Detalle</span>
-                    <h2 id="detailsTitle">Información de la escuela</h2>
+                    <h2 id="detailsTitle">Información del plantel</h2>
                 </div>
 
                 <button id="closePanel" class="icon-button" type="button" aria-label="Cerrar panel" title="Cerrar">
@@ -279,7 +279,7 @@
                     <div id="schoolInfo">
                         <div class="empty-state">
                             <i class="fa-solid fa-school-circle-check" aria-hidden="true"></i>
-                            <h3>Selecciona una escuela</h3>
+                            <h3>Selecciona un plantel</h3>
                             <p>Haz clic en un AGEB o utiliza el buscador para consultar la proyección completa.</p>
                         </div>
                     </div>
@@ -306,7 +306,7 @@
                         </div>
                     </div>
                     <div id="conapoSummary" class="conapo-summary">
-                        <p class="empty-message">Selecciona un AGEB o una escuela para consultar la comparación de su alcaldía.</p>
+                        <p class="empty-message">Selecciona un AGEB o un plantel para consultar la comparación de su alcaldía.</p>
                     </div>
                     <div class="chart-wrapper">
                         <canvas id="conapoChart"></canvas>
@@ -322,7 +322,7 @@
                     </div>
 
                     <div id="projectionTable" class="table-wrapper">
-                        <p class="empty-message">Selecciona una escuela para ver la tabla.</p>
+                        <p class="empty-message">Selecciona un plantel para ver la tabla.</p>
                     </div>
                 </section>
 
@@ -330,12 +330,12 @@
                     <div class="detail-section-heading">
                         <div>
                             <span class="section-eyebrow">Referencia</span>
-                            <h3>Escuelas similares</h3>
+                            <h3>Planteles similares</h3>
                         </div>
                     </div>
 
                     <div id="similarSchools">
-                        <p class="empty-message">Selecciona una escuela para consultar planteles similares.</p>
+                        <p class="empty-message">Selecciona un plantel para consultar planteles similares.</p>
                     </div>
                 </section>
 
