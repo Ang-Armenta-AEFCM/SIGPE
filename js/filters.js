@@ -97,6 +97,15 @@ function connectVariableFilter() {
     if (!selector) return;
 
     selector.value = SIGPE.currentVariable;
+    updateVariableButtons();
+
+    document.querySelectorAll("[data-variable]").forEach(button => {
+        button.addEventListener("click", () => {
+            selector.value = button.dataset.variable;
+            selector.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    });
+
     selector.addEventListener("change", event => {
         SIGPE.currentVariable = event.target.value === "percentage"
             ? "percentage"
@@ -106,8 +115,17 @@ function connectVariableFilter() {
             const range = byId("percentageRangeFilter");
             if (range) range.value = "all";
         }
+        updateVariableButtons();
         updateTerritoryUI();
         refreshMap();
+    });
+}
+
+function updateVariableButtons() {
+    document.querySelectorAll("[data-variable]").forEach(button => {
+        const active = button.dataset.variable === SIGPE.currentVariable;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
     });
 }
 
@@ -135,8 +153,8 @@ function updateTerritoryUI() {
 
     const status = byId("mapStatusText");
     if (status) status.innerHTML = isAlcaldia
-        ? '<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Selecciona una alcaldía para consultar su evolución y la comparación con CONAPO.'
-        : '<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Selecciona un AGEB para consultar sus planteles.';
+        ? '<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Selecciona una alcaldía para consultar su evolución y contexto.'
+        : '<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Selecciona una zona (AGEB) para consultar sus planteles.';
 }
 
 
@@ -345,10 +363,10 @@ function connectClearFiltersButton() {
     if (!button) return;
 
     button.addEventListener("click", () => {
-        SIGPE.currentYearIndex = 0;
+        SIGPE.currentYearIndex = SIGPE.years.length - 1;
         SIGPE.currentLevel = "Todos";
         SIGPE.currentAlcaldia = "Todos";
-        SIGPE.currentVariable = "total";
+        SIGPE.currentVariable = "percentage";
         SIGPE.currentTerritory = "ageb";
         SIGPE.currentPercentageRange = "all";
 
@@ -377,17 +395,18 @@ function connectClearFiltersButton() {
             "filtroAlcaldia"
         );
 
-        if (yearSelector) yearSelector.value = "0";
-        if (yearSlider) yearSlider.value = "0";
+        if (yearSelector) yearSelector.value = String(SIGPE.years.length - 1);
+        if (yearSlider) yearSlider.value = String(SIGPE.years.length - 1);
         if (levelSelector) levelSelector.value = "Todos";
         if (alcaldiaSelector) alcaldiaSelector.value = "Todos";
 
         const territorySelector = byId("territorySelect");
         const variableSelector = byId("variableSelect");
         if (territorySelector) territorySelector.value = "ageb";
-        if (variableSelector) variableSelector.value = "total";
+        if (variableSelector) variableSelector.value = "percentage";
         const percentageRangeSelector = byId("percentageRangeFilter");
         if (percentageRangeSelector) percentageRangeSelector.value = "all";
+        updateVariableButtons();
         updateTerritoryUI();
 
         const searchInput = byId("searchInput");
@@ -496,6 +515,7 @@ function updateDashboard() {
         currentEnrollment,
         baseEnrollment
     );
+    const absoluteChange = currentEnrollment - baseEnrollment;
 
     setDashboardValue(
         ["totalEscuelas", "statSchools"],
@@ -508,6 +528,11 @@ function updateDashboard() {
     );
 
     setDashboardValue(
+        ["baseMatricula"],
+        formatNumber(baseEnrollment)
+    );
+
+    setDashboardValue(
         ["totalAGEB", "unitsCount", "statAGEB"],
         formatNumber(totalUnits)
     );
@@ -516,6 +541,15 @@ function updateDashboard() {
         ["cambioTotal", "statChange"],
         formatPercentage(accumulatedChange)
     );
+
+    setDashboardValue(
+        ["cambioAbsoluto"],
+        `${absoluteChange > 0 ? "+" : ""}${formatNumber(absoluteChange)} estudiantes`
+    );
+
+    const changeCard = byId("cambioTotal")?.closest(".map-kpi");
+    changeCard?.classList.toggle("negative", absoluteChange < 0);
+    changeCard?.classList.toggle("positive", absoluteChange > 0);
 
     const currentCycle = firstExistingElement(
         "currentCycle",
@@ -526,7 +560,80 @@ function updateDashboard() {
         currentCycle.textContent = getCurrentYear().label;
     }
 
+    updateViewStatement();
+    renderAlcaldiaSummary();
     updateMapLegend(features);
+}
+
+function updateViewStatement() {
+    const statement = byId("viewStatement");
+    if (!statement) return;
+    const level = SIGPE.currentLevel === "Todos" ? "Todos los niveles" : SIGPE.currentLevel;
+    const alcaldiaSelect = byId("alcaldiaFilter");
+    const alcaldia = SIGPE.currentAlcaldia === "Todos"
+        ? "Toda la CDMX"
+        : alcaldiaSelect?.selectedOptions?.[0]?.textContent?.trim() || "Alcaldía seleccionada";
+    const metric = SIGPE.currentVariable === "percentage"
+        ? `cambio proyectado para ${getCurrentYear().label} comparado con 2024-2025`
+        : `matrícula proyectada para ${getCurrentYear().label}`;
+    statement.innerHTML = `<strong>Estás viendo:</strong> ${escapeHTML(level)} · ${escapeHTML(alcaldia)} · ${escapeHTML(metric)}.`;
+}
+
+function getSchoolsForCurrentSummary() {
+    const currentField = getCurrentYearField();
+    return SIGPE.data.escuelas.filter(school => {
+        const levelMatch = SIGPE.currentLevel === "Todos" ||
+            normalizeString(school.nivel) === normalizeString(SIGPE.currentLevel);
+        const municipalityMatch = SIGPE.currentAlcaldia === "Todos" ||
+            String(school.mun || "").padStart(3, "0") === SIGPE.currentAlcaldia;
+        const change = percent(Number(school[currentField]) || 0, Number(school.mat_2024_2025) || 0);
+        const rangeMatch = SIGPE.currentVariable !== "percentage" || matchesPercentageRange(change);
+        return levelMatch && municipalityMatch && rangeMatch;
+    });
+}
+
+function renderAlcaldiaSummary() {
+    const body = byId("summaryTableBody");
+    if (!body || !SIGPE.data.escuelas.length) return;
+    const currentField = getCurrentYearField();
+    const groups = new Map();
+    getSchoolsForCurrentSummary().forEach(school => {
+        const key = String(school.mun || "").padStart(3, "0");
+        if (!groups.has(key)) groups.set(key, { name: school.alcaldia, base: 0, projected: 0, schools: 0 });
+        const group = groups.get(key);
+        group.base += Number(school.mat_2024_2025) || 0;
+        group.projected += Number(school[currentField]) || 0;
+        group.schools += 1;
+    });
+    const rows = [...groups.values()].map(group => ({
+        ...group,
+        difference: group.projected - group.base,
+        change: percent(group.projected, group.base)
+    })).sort((a, b) => (a.change ?? Infinity) - (b.change ?? Infinity));
+
+    const signed = value => `${value > 0 ? "+" : ""}${formatNumber(value)}`;
+    body.innerHTML = rows.length ? rows.map(row => `
+        <tr>
+            <th scope="row">${escapeHTML(row.name)}</th>
+            <td>${formatNumber(row.base)}</td>
+            <td>${formatNumber(row.projected)}</td>
+            <td class="${row.difference < 0 ? "negative-value" : row.difference > 0 ? "positive-value" : ""}">${signed(row.difference)}</td>
+            <td><span class="change-badge ${row.change < -2 ? "decrease" : row.change > 2 ? "increase" : "stable"}">${formatPercentage(row.change)}</span></td>
+        </tr>`).join("") : '<tr><td colspan="5" class="empty-message">No hay resultados para los filtros seleccionados.</td></tr>';
+
+    const ranking = (items, target) => {
+        const host = byId(target);
+        if (!host) return;
+        host.innerHTML = items.length ? items.map((row, index) => `
+            <div class="ranking-row"><span class="ranking-position">${index + 1}</span><strong>${escapeHTML(row.name)}</strong><span>${formatPercentage(row.change)}</span></div>
+        `).join("") : '<p class="empty-message">Sin alcaldías en esta categoría.</p>';
+    };
+    ranking(rows.filter(row => row.change < -2).slice(0, 5), "topDecreases");
+    ranking([...rows].filter(row => row.change > 2).sort((a, b) => b.change - a.change).slice(0, 5), "topIncreases");
+
+    const level = SIGPE.currentLevel === "Todos" ? "Todos los niveles" : SIGPE.currentLevel;
+    byId("summaryScope").textContent = `${level} · ${getCurrentYear().label} frente a 2024-2025 · ${formatNumber(rows.reduce((sum, row) => sum + row.schools, 0))} planteles.`;
+    byId("summaryProjectedHeader").textContent = `Proyección ${getCurrentYear().label}`;
 }
 
 

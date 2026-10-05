@@ -10,10 +10,10 @@ function initializeMap() {
     }).setView([19.36, -99.13], 10);
 
     L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
         {
             maxZoom: 19,
-            attribution: "&copy; OpenStreetMap"
+            attribution: "Tiles &copy; Esri"
         }
     ).addTo(SIGPE.map);
 }
@@ -571,7 +571,7 @@ function showAGEBInformation(feature) {
 
     byId("schoolInfo").innerHTML = `
         <section class="ageb-summary">
-            <h2>AGEB ${escapeHTML(properties.CVE_AGEB || "")}</h2>
+            <h2>Zona (AGEB) ${escapeHTML(properties.CVE_AGEB || "")}</h2>
 
             <div class="popup-grid">
                 <span>Clave:</span>
@@ -592,7 +592,7 @@ function showAGEBInformation(feature) {
         </section>
 
         <section class="ageb-school-list">
-            <h3>Planteles en el AGEB</h3>
+            <h3>Planteles en esta zona</h3>
 
             ${
                 !showSchools

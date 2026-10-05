@@ -10,17 +10,25 @@ function setDetailMode(mode) {
         ? "Información del plantel"
         : alcaldiaMode
             ? "Información de la alcaldía"
-            : "Información del AGEB";
+            : "Información de la zona (AGEB)";
 
     byId("schoolChartSection")?.classList.toggle("is-hidden", !schoolMode);
     byId("projectionSection")?.classList.toggle("is-hidden", !(schoolMode || alcaldiaMode));
     byId("similarSection")?.classList.toggle("is-hidden", !schoolMode);
     byId("schoolActionsSection")?.classList.toggle("is-hidden", !schoolMode);
     byId("conapoSection")?.classList.toggle("is-hidden", false);
+
+    const evolutionTab = document.querySelector('[data-detail-target="evolution"]');
+    if (evolutionTab) evolutionTab.classList.toggle("is-hidden", !(schoolMode || alcaldiaMode));
+    activateDetailTab("summary");
 }
 
 
 function initializeSidebar() {
+    document.querySelectorAll("[data-detail-target]").forEach(button => {
+        button.addEventListener("click", () => activateDetailTab(button.dataset.detailTarget));
+    });
+
     const closeButton = firstExistingElement(
         "closePanel",
         "closeDetails",
@@ -59,6 +67,28 @@ function initializeSidebar() {
                 downloadSchoolCSV(SIGPE.selectedSchool);
             }
         });
+    }
+}
+
+function activateDetailTab(target) {
+    document.querySelectorAll("[data-detail-target]").forEach(button => {
+        const active = button.dataset.detailTarget === target && !button.classList.contains("is-hidden");
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+    });
+    document.querySelectorAll("[data-detail-panel]").forEach(panel => {
+        panel.classList.toggle("active", panel.dataset.detailPanel === target);
+    });
+    byId("detailsPanel")?.querySelector(".details-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Chart.js necesita que el lienzo sea visible para calcular su tamaño.
+    if (target === "evolution" && SIGPE.selectedSchool) {
+        requestAnimationFrame(() => renderSchoolChart(SIGPE.selectedSchool));
+    }
+    if (target === "context") {
+        const municipality = SIGPE.selectedSchool?.mun ||
+            SIGPE.selectedTerritoryFeature?.properties?.CVE_MUN;
+        if (municipality) requestAnimationFrame(() => renderConapoComparison(municipality));
     }
 }
 
@@ -111,6 +141,7 @@ function selectSchool(school) {
         byId("projectionTable").innerHTML = "<p>Sin proyección disponible para este CCT.</p>";
         byId("similarSchools").innerHTML = "";
         destroySchoolChart();
+        renderConapoComparison(school.mun);
         openSidebar();
         return;
     }
@@ -142,6 +173,13 @@ function renderSchoolInformation(school) {
     );
 
     const annualGrowth = calculateAverageAnnualGrowth(school);
+    const absoluteChange = currentValue - baseValue;
+    const trendLabel = totalChange < -2
+        ? "Disminución proyectada"
+        : totalChange > 2
+            ? "Aumento proyectado"
+            : "Comportamiento estable";
+    const trendClass = totalChange < -2 ? "decrease" : totalChange > 2 ? "increase" : "stable";
 
     container.innerHTML = `
         <div class="school-detail-header">
@@ -157,6 +195,17 @@ function renderSchoolInformation(school) {
             </div>
         </div>
 
+        <div class="detail-trend ${trendClass}">
+            <span>${trendLabel}</span>
+            <strong>${formatPercentage(totalChange)}</strong>
+        </div>
+
+        <div class="detail-metric-grid">
+            <article><span>Base 2024-2025</span><strong>${formatNumber(baseValue)}</strong></article>
+            <article><span>${currentYear.label}</span><strong>${formatNumber(currentValue)}</strong></article>
+            <article><span>Diferencia</span><strong class="${absoluteChange < 0 ? "negative-value" : "positive-value"}">${absoluteChange > 0 ? "+" : ""}${formatNumber(absoluteChange)}</strong></article>
+        </div>
+
         <div class="school-information-grid">
             <span>CCT</span>
             <strong>${escapeHTML(school.cct)}</strong>
@@ -170,21 +219,6 @@ function renderSchoolInformation(school) {
 
             <span>Ciclo mostrado</span>
             <strong>${currentYear.label}</strong>
-
-            <span>Matrícula base</span>
-            <strong>${formatNumber(baseValue)}</strong>
-
-            <span>Matrícula proyectada</span>
-            <strong>${formatNumber(currentValue)}</strong>
-
-            <span>Cambio acumulado</span>
-            <strong class="${
-                totalChange < 0
-                    ? "negative-value"
-                    : "positive-value"
-            }">
-                ${formatPercentage(totalChange)}
-            </strong>
 
             <span>Crecimiento anual promedio</span>
             <strong>
@@ -278,7 +312,7 @@ function renderSimilarSchools(school) {
     if (candidates.length === 0) {
         container.innerHTML = `
             <p class="empty-message">
-                No se encontraron planteles similares.
+                No se encontraron planteles con matrícula proyectada parecida.
             </p>
         `;
 

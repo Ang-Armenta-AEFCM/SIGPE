@@ -27,10 +27,11 @@ const SIGPE = {
         }
     ),
 
-    currentYearIndex: 0,
+    // La vista inicial muestra una proyección real, no el ciclo base.
+    currentYearIndex: 11,
     currentLevel: "Todos",
     currentAlcaldia: "Todos",
-    currentVariable: "total",
+    currentVariable: "percentage",
     currentTerritory: "ageb",
     currentPercentageRange: "all",
 
@@ -62,6 +63,8 @@ window.addEventListener(
             initializeComparison();
             initializeLayerControls();
             initializeCollapsibleSections();
+            initializeMainViews();
+            initializeMobileFilters();
             initializeFullscreen();
 
             refreshMap();
@@ -107,12 +110,53 @@ window.addEventListener(
 );
 
 function initializeCollapsibleSections() {
-    const section = byId("layersSection");
-    const button = byId("layersToggle");
-    if (!section || !button) return;
-
-    button.addEventListener("click", () => {
-        const collapsed = section.classList.toggle("is-collapsed");
-        button.setAttribute("aria-expanded", String(!collapsed));
+    document.querySelectorAll(".collapsible-section").forEach(section => {
+        const button = section.querySelector(".section-toggle");
+        if (!button) return;
+        button.addEventListener("click", () => {
+            const collapsed = section.classList.toggle("is-collapsed");
+            button.setAttribute("aria-expanded", String(!collapsed));
+        });
     });
+}
+
+function initializeMainViews() {
+    document.querySelectorAll("[data-main-view]").forEach(button => {
+        button.addEventListener("click", () => setMainView(button.dataset.mainView));
+    });
+    byId("summaryBackToMap")?.addEventListener("click", () => setMainView("map"));
+}
+
+function setMainView(view) {
+    const summary = view === "summary";
+    byId("summaryView")?.classList.toggle("is-hidden", !summary);
+    document.querySelectorAll("[data-main-view]").forEach(button => {
+        const active = button.dataset.mainView === (summary ? "summary" : "map");
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+    });
+    if (summary) {
+        renderAlcaldiaSummary();
+        closeMobileFilters();
+    } else {
+        setTimeout(() => SIGPE.map?.invalidateSize(false), 50);
+    }
+}
+
+function initializeMobileFilters() {
+    byId("filtersToggleBtn")?.addEventListener("click", openMobileFilters);
+    byId("mobileFiltersClose")?.addEventListener("click", closeMobileFilters);
+    byId("mobileBackdrop")?.addEventListener("click", closeMobileFilters);
+}
+
+function openMobileFilters() {
+    byId("filtersPanel")?.classList.add("open");
+    byId("mobileBackdrop")?.classList.add("visible");
+    byId("filtersToggleBtn")?.setAttribute("aria-expanded", "true");
+}
+
+function closeMobileFilters() {
+    byId("filtersPanel")?.classList.remove("open");
+    byId("mobileBackdrop")?.classList.remove("visible");
+    byId("filtersToggleBtn")?.setAttribute("aria-expanded", "false");
 }
