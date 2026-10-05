@@ -5,370 +5,201 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sistema de Información Geográfica de Proyecciones Educativas de la Ciudad de México.">
     <title>SIGPE-CDMX | Proyecciones educativas</title>
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="leaflet-fallback.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
     <header class="topbar">
         <div class="brand">
-            <div class="brand-icon" aria-hidden="true">
-                <i class="fa-solid fa-school"></i>
-            </div>
-            <div class="brand-text">
-                <h1>SIGPE-CDMX</h1>
-                <p>Sistema de Información Geográfica de Proyecciones Educativas</p>
-            </div>
+            <div class="brand-icon" aria-hidden="true"><i class="fa-solid fa-school"></i></div>
+            <div class="brand-text"><h1>SIGPE-CDMX</h1><p>Proyecciones educativas de la Ciudad de México</p></div>
         </div>
+
+        <nav class="view-switcher" aria-label="Vista principal">
+            <button id="mapViewBtn" class="view-button active" type="button" data-main-view="map" aria-pressed="true"><i class="fa-solid fa-map"></i><span>Mapa</span></button>
+            <button id="summaryViewBtn" class="view-button" type="button" data-main-view="summary" aria-pressed="false"><i class="fa-solid fa-chart-column"></i><span>Resumen</span></button>
+        </nav>
 
         <div class="topbar-actions">
             <div class="search-box">
                 <label class="sr-only" for="searchInput">Buscar plantel por nombre, CCT o alcaldía</label>
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                <input id="searchInput" type="search" placeholder="Buscar plantel, CCT o alcaldía..." autocomplete="off" spellcheck="false">
+                <input id="searchInput" type="search" placeholder="Buscar plantel, CCT o alcaldía…" autocomplete="off" spellcheck="false">
                 <div id="searchResults" class="search-results" role="listbox" aria-label="Resultados de búsqueda"></div>
             </div>
-
-            <button id="fullscreenBtn" class="topbar-button" type="button" title="Pantalla completa" aria-label="Activar pantalla completa">
-                <i class="fa-solid fa-expand" aria-hidden="true"></i>
-                <span>Pantalla completa</span>
-            </button>
+            <button id="filtersToggleBtn" class="topbar-button mobile-filter-button" type="button" aria-label="Abrir filtros" aria-expanded="false"><i class="fa-solid fa-sliders"></i><span>Filtros</span></button>
+            <button id="fullscreenBtn" class="topbar-button" type="button" title="Pantalla completa" aria-label="Activar pantalla completa"><i class="fa-solid fa-expand"></i><span>Pantalla completa</span></button>
         </div>
     </header>
 
-    <main class="app-layout">
-        <aside id="filtersPanel" class="left-panel" aria-label="Filtros y estadísticas">
+    <main class="app-layout details-closed">
+        <aside id="filtersPanel" class="left-panel" aria-label="Filtros y opciones del mapa">
             <div class="panel-heading">
-                <div>
-                    <span class="panel-kicker">Estadística Oficial 911</span>
-                    <h2>Filtros del visor</h2>
+                <div><span class="panel-kicker">Estadística Oficial 911</span><h2>¿Qué quieres consultar?</h2></div>
+                <div class="panel-heading-actions">
+                    <button id="clearFilters" class="secondary-button compact-button" type="button"><i class="fa-solid fa-rotate-left"></i> Limpiar</button>
+                    <button id="mobileFiltersClose" class="icon-button mobile-close-button" type="button" aria-label="Cerrar filtros"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-
-                <button id="clearFilters" class="secondary-button compact-button" type="button">
-                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-                    Limpiar
-                </button>
             </div>
 
-            <section class="panel-section">
-                <div class="section-title">
-                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-                    <h3>Ciclo escolar</h3>
+            <section class="panel-section primary-controls">
+                <div class="form-group first-group">
+                    <label>Visualización principal</label>
+                    <div class="segmented-control" role="group" aria-label="Visualización principal">
+                        <button class="segment-button" type="button" data-variable="percentage"><i class="fa-solid fa-arrow-trend-down"></i><span>Cambio proyectado</span></button>
+                        <button class="segment-button" type="button" data-variable="total"><i class="fa-solid fa-users"></i><span>Estudiantes proyectados</span></button>
+                    </div>
+                    <select id="variableSelect" class="sr-only" tabindex="-1" aria-hidden="true"><option value="percentage">Cambio proyectado</option><option value="total">Estudiantes proyectados</option></select>
                 </div>
 
                 <div class="form-group">
-                    <label for="yearSelect">Seleccionar ciclo</label>
+                    <label for="yearSelect">Ciclo proyectado</label>
                     <select id="yearSelect"></select>
+                    <small class="field-help">Se compara con la matrícula base 2024-2025.</small>
                 </div>
-
-                <div class="form-group">
-                    <label for="territorySelect">Unidad territorial</label>
-                    <select id="territorySelect">
-                        <option value="ageb">AGEB</option>
-                        <option value="alcaldia">Alcaldía</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="variableSelect">Representar en el mapa</label>
-                    <select id="variableSelect">
-                        <option value="total">Matrícula total</option>
-                        <option value="percentage">Variación porcentual</option>
-                    </select>
-                </div>
-
-                <div id="percentageRangeGroup" class="form-group is-hidden">
-                    <label for="percentageRangeFilter">Mostrar únicamente</label>
-                    <select id="percentageRangeFilter">
-                        <option value="all">Todos los rangos</option>
-                        <option value="no-base">Sin base de comparación</option>
-                        <option value="lt-10">Disminución mayor a 10%</option>
-                        <option value="-10--7">-10% a -7%</option>
-                        <option value="-7--4">-7% a -4%</option>
-                        <option value="-4--2">-4% a -2%</option>
-                        <option value="-2-2">Estabilidad: -2% a +2%</option>
-                        <option value="2-5">+2% a +5%</option>
-                        <option value="5-10">+5% a +10%</option>
-                        <option value="10-20">+10% a +20%</option>
-                        <option value="gt20">Crecimiento mayor a 20%</option>
-                    </select>
-                    <small class="field-help">El mapa mostrará solo las unidades que pertenezcan al rango elegido.</small>
-                </div>
-
-                <div id="miniVariableLegend" class="mini-variable-legend" aria-live="polite">
-                    <div class="mini-legend-heading">Escala de matrícula</div>
-                    <div class="mini-color-bar mini-color-bar-total" aria-hidden="true"></div>
-                    <div class="mini-color-labels"><span>Menor</span><span>Mayor</span></div>
-                </div>
-
-                <div class="form-group">
-                    <div class="range-label-row">
-                        <label for="yearSlider">Desplazamiento temporal</label>
-                        <strong id="currentCycle">2024-2025</strong>
-                    </div>
-
-                    <input id="yearSlider" type="range" min="0" max="11" step="1" value="0">
-
-                    <div class="range-extremes">
-                        <span>2024-2025</span>
-                        <span>2035-2036</span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="panel-section">
-                <div class="section-title">
-                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                    <h3>Filtros territoriales</h3>
-                </div>
-
                 <div id="levelFilterGroup" class="form-group">
                     <label for="levelFilter">Nivel educativo</label>
-                    <select id="levelFilter">
-                        <option value="Todos">Todos los niveles</option>
-                    </select>
+                    <select id="levelFilter"><option value="Todos">Todos los niveles</option></select>
                 </div>
-
                 <div id="alcaldiaFilterGroup" class="form-group">
                     <label for="alcaldiaFilter">Alcaldía</label>
-                    <select id="alcaldiaFilter">
-                        <option value="Todos">Todas las alcaldías</option>
-                    </select>
+                    <select id="alcaldiaFilter"><option value="Todos">Todas las alcaldías</option></select>
                 </div>
+                <div id="miniVariableLegend" class="mini-variable-legend" aria-live="polite"></div>
             </section>
 
-            <section class="panel-section collapsible-section" id="layersSection">
-                <button class="section-title section-toggle" id="layersToggle" type="button" aria-expanded="true" aria-controls="layersContent">
-                    <span class="section-title-label">
-                        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-                        <h3>Capas del mapa</h3>
-                    </span>
-                    <i class="fa-solid fa-chevron-up section-toggle-icon" aria-hidden="true"></i>
+            <section class="panel-section collapsible-section is-collapsed" id="advancedSection">
+                <button class="section-title section-toggle" id="advancedToggle" type="button" aria-expanded="false" aria-controls="advancedContent">
+                    <span class="section-title-label"><i class="fa-solid fa-sliders"></i><h3>Opciones avanzadas</h3></span>
+                    <i class="fa-solid fa-chevron-up section-toggle-icon"></i>
                 </button>
+                <div class="collapsible-content advanced-content" id="advancedContent">
+                    <div class="form-group">
+                        <label for="territorySelect">Nivel territorial del mapa</label>
+                        <select id="territorySelect"><option value="ageb">Zona (AGEB)</option><option value="alcaldia">Alcaldía</option></select>
+                        <small class="field-help">Una AGEB es una zona estadística utilizada para agrupar información territorial.</small>
+                    </div>
+                    <div id="percentageRangeGroup" class="form-group">
+                        <label for="percentageRangeFilter">Filtrar por cambio exacto</label>
+                        <select id="percentageRangeFilter">
+                            <option value="all">Todos los rangos</option><option value="no-base">Sin base de comparación</option>
+                            <option value="lt-10">Menor a -10%</option><option value="-10--7">-10% a -7%</option>
+                            <option value="-7--4">-7% a -4%</option><option value="-4--2">-4% a -2%</option>
+                            <option value="-2-2">Estable: -2% a +2%</option><option value="2-5">+2% a +5%</option>
+                            <option value="5-10">+5% a +10%</option><option value="10-20">+10% a +20%</option><option value="gt20">Mayor a +20%</option>
+                        </select>
+                    </div>
 
-                <div class="layer-list collapsible-content" id="layersContent">
-                    <label id="agebLayerOption" class="layer-option">
-                        <input id="chkAGEB" type="checkbox" checked>
-                        <span class="layer-option-text">
-                            <strong>AGEB</strong>
-                            <small>Matrícula proyectada por área</small>
-                        </span>
-                    </label>
-
-                    <label id="alcaldiaLayerOption" class="layer-option">
-                        <input id="chkAlcaldias" type="checkbox" checked>
-                        <span class="layer-option-text">
-                            <strong>Alcaldías</strong>
-                            <small>Límites administrativos</small>
-                        </span>
-                    </label>
-
-                    <label id="schoolsLayerOption" class="layer-option">
-                        <input id="chkEscuelas" type="checkbox" checked>
-                        <span class="layer-option-text">
-                            <strong>Planteles</strong>
-                            <small>Listado asociado a cada AGEB</small>
-                        </span>
-                    </label>
+                    <div class="advanced-subsection">
+                        <h4>Capas del mapa</h4>
+                        <div class="layer-list" id="layersContent">
+                            <label id="agebLayerOption" class="layer-option"><input id="chkAGEB" type="checkbox" checked><span class="layer-option-text"><strong>Zonas (AGEB)</strong><small>Matrícula proyectada por área</small></span></label>
+                            <label id="alcaldiaLayerOption" class="layer-option"><input id="chkAlcaldias" type="checkbox" checked><span class="layer-option-text"><strong>Alcaldías</strong><small>Límites administrativos</small></span></label>
+                            <label id="schoolsLayerOption" class="layer-option"><input id="chkEscuelas" type="checkbox" checked><span class="layer-option-text"><strong>Planteles</strong><small>Listado dentro de cada zona</small></span></label>
+                        </div>
+                    </div>
+                    <div class="advanced-subsection"><h4>Leyenda detallada</h4><div id="legend" class="legend"><p class="empty-message">La leyenda aparecerá al cargar los datos.</p></div></div>
+                    <div class="advanced-subsection">
+                        <h4>Descargas</h4>
+                        <div class="download-list">
+                            <a class="download-link" href="data/base_matriculas_911_proyectadas.csv" download><i class="fa-solid fa-file-csv"></i>Matrícula 911 y proyecciones</a>
+                            <a class="download-link" href="data/conapo_00_14.csv" download><i class="fa-solid fa-file-csv"></i>Población CONAPO 0–14</a>
+                            <a class="download-link" href="data/analisis_alcaldias.csv" download><i class="fa-solid fa-file-csv"></i>Análisis por alcaldía</a>
+                            <a class="download-link" href="docs/ficha_metodologica_SIGPE_CDMX.pdf" download><i class="fa-solid fa-file-pdf"></i>Ficha metodológica</a>
+                        </div>
+                    </div>
+                    <div class="technical-note" role="note"><strong><i class="fa-solid fa-circle-info"></i> Nota técnica</strong><p>Son escenarios estimados a partir de la Estadística Oficial 911. Sirven para identificar tendencias y no sustituyen los registros observados de cada ciclo.</p></div>
                 </div>
             </section>
-
-            <section class="panel-section">
-                <div class="section-title">
-                    <i class="fa-solid fa-chart-column" aria-hidden="true"></i>
-                    <h3>Resumen</h3>
-                </div>
-
-                <div class="stats-grid">
-                    <article class="stat-card">
-                        <span class="stat-label">Planteles</span>
-                        <strong id="totalEscuelas">—</strong>
-                    </article>
-
-                    <article class="stat-card">
-                        <span class="stat-label">Matrícula mostrada</span>
-                        <strong id="totalMatricula">—</strong>
-                    </article>
-
-                    <article class="stat-card">
-                        <span id="unitsStatLabel" class="stat-label">AGEB con matrícula</span>
-                        <strong id="totalAGEB">—</strong>
-                    </article>
-
-                    <article class="stat-card">
-                        <span class="stat-label">Cambio acumulado</span>
-                        <strong id="cambioTotal">—</strong>
-                    </article>
-                </div>
-            </section>
-
-            <section class="panel-section">
-                <div class="section-title">
-                    <i class="fa-solid fa-palette" aria-hidden="true"></i>
-                    <h3>Leyenda</h3>
-                </div>
-
-                <div id="legend" class="legend">
-                    <p class="empty-message">La leyenda aparecerá al cargar los datos.</p>
-                </div>
-            </section>
-
-            <section class="panel-section">
-                <div class="section-title">
-                    <i class="fa-solid fa-download" aria-hidden="true"></i>
-                    <h3>Descargas</h3>
-                </div>
-
-                <div class="download-list">
-                    <a class="download-link" href="data/base_matriculas_911_proyectadas.csv" download>
-                        <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
-                        Matrícula 911 y proyecciones
-                    </a>
-
-                    <a class="download-link" href="data/conapo_00_14.csv" download>
-                        <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
-                        Población CONAPO 0–14
-                    </a>
-
-                    <a class="download-link" href="data/analisis_alcaldias.csv" download>
-                        <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
-                        Análisis por alcaldía
-                    </a>
-
-                    <a class="download-link" href="docs/ficha_metodologica_SIGPE_CDMX.pdf" download>
-                        <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
-                        Ficha metodológica
-                    </a>
-                </div>
-            </section>
-
-            <div class="technical-note" role="note">
-                <strong><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Nota técnica</strong>
-                <p>Los resultados representan escenarios estimados de cambio en la matrícula a partir de la Estadística Oficial 911. Sirven para identificar tendencias territoriales y apoyar el análisis; no constituyen cifras observadas ni sustituyen la actualización anual de los registros oficiales.</p>
-            </div>
         </aside>
 
         <section class="map-area" aria-label="Mapa de proyecciones educativas">
             <div id="map"></div>
-
-            <div class="map-status">
-                <span id="mapStatusText">
-                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    Selecciona un AGEB para consultar sus planteles.
-                </span>
+            <div class="map-overview" aria-live="polite">
+                <div id="viewStatement" class="view-statement">Preparando la consulta…</div>
+                <div class="map-kpis">
+                    <article class="map-kpi"><span>Planteles</span><strong id="totalEscuelas">—</strong></article>
+                    <article class="map-kpi"><span>Matrícula base</span><strong id="baseMatricula">—</strong></article>
+                    <article class="map-kpi"><span>Matrícula proyectada</span><strong id="totalMatricula">—</strong></article>
+                    <article class="map-kpi change-kpi"><span>Cambio</span><strong id="cambioTotal">—</strong><small id="cambioAbsoluto">—</small></article>
+                </div>
             </div>
+            <div class="map-status"><span id="mapStatusText"><i class="fa-solid fa-circle-info"></i> Selecciona una zona para consultar sus planteles.</span></div>
+
+            <section id="summaryView" class="summary-view is-hidden" aria-label="Resumen por alcaldía">
+                <div class="summary-view-header">
+                    <div><span class="panel-kicker">Lectura rápida</span><h2>Resumen por alcaldía</h2><p id="summaryScope">Resultados del filtro actual.</p></div>
+                    <button id="summaryBackToMap" class="primary-button" type="button"><i class="fa-solid fa-map"></i> Ver mapa</button>
+                </div>
+                <div class="summary-highlights">
+                    <article class="summary-highlight decrease-highlight"><h3>Mayores disminuciones</h3><div id="topDecreases" class="ranking-list"></div></article>
+                    <article class="summary-highlight increase-highlight"><h3>Mayores aumentos</h3><div id="topIncreases" class="ranking-list"></div></article>
+                </div>
+                <div class="summary-table-card">
+                    <div class="summary-table-heading"><div><h3>Resultados completos</h3><p>Ordenados por variación proyectada.</p></div></div>
+                    <div class="table-wrapper">
+                        <table class="summary-table">
+                            <thead><tr><th>Alcaldía</th><th>Base 2024-2025</th><th id="summaryProjectedHeader">Proyección</th><th>Diferencia</th><th>Cambio</th></tr></thead>
+                            <tbody id="summaryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </section>
 
-        <aside id="detailsPanel" class="details-panel" aria-label="Detalle de plantel">
+        <aside id="detailsPanel" class="details-panel closed" aria-label="Detalle de plantel">
             <div class="details-header">
-                <div>
-                    <span class="panel-kicker">Detalle</span>
-                    <h2 id="detailsTitle">Información del plantel</h2>
-                </div>
-
-                <button id="closePanel" class="icon-button" type="button" aria-label="Cerrar panel" title="Cerrar">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
+                <div><span class="panel-kicker">Detalle</span><h2 id="detailsTitle">Información del plantel</h2></div>
+                <button id="closePanel" class="icon-button" type="button" aria-label="Cerrar panel" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
+            <div id="detailTabs" class="detail-tabs-nav" role="tablist" aria-label="Secciones de la ficha">
+                <button class="detail-tab-button active" type="button" data-detail-target="summary" role="tab" aria-selected="true">Resumen</button>
+                <button class="detail-tab-button" type="button" data-detail-target="evolution" role="tab" aria-selected="false">Evolución</button>
+                <button class="detail-tab-button" type="button" data-detail-target="context" role="tab" aria-selected="false">Contexto</button>
+            </div>
             <div class="details-scroll">
-                <section id="informationSection" class="detail-section">
-                    <div id="schoolInfo">
-                        <div class="empty-state">
-                            <i class="fa-solid fa-school-circle-check" aria-hidden="true"></i>
-                            <h3>Selecciona un plantel</h3>
-                            <p>Haz clic en un AGEB o utiliza el buscador para consultar la proyección completa.</p>
-                        </div>
-                    </div>
-                </section>
-
-                <section id="schoolChartSection" class="detail-section">
-                    <div class="detail-section-heading">
-                        <div>
-                            <span class="section-eyebrow">Evolución temporal</span>
-                            <h3>Proyección de matrícula</h3>
-                        </div>
-                    </div>
-
-                    <div class="chart-wrapper">
-                        <canvas id="chartMatricula"></canvas>
-                    </div>
-                </section>
-
-                <section class="detail-section" id="conapoSection">
-                    <div class="detail-section-heading">
-                        <div>
-                            <span class="section-eyebrow">Comparación demográfica</span>
-                            <h3>Matrícula vs CONAPO 0–14</h3>
-                        </div>
-                    </div>
-                    <div id="conapoSummary" class="conapo-summary">
-                        <p class="empty-message">Selecciona un AGEB o un plantel para consultar la comparación de su alcaldía.</p>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="conapoChart"></canvas>
-                    </div>
-                </section>
-
-                <section id="projectionSection" class="detail-section">
-                    <div class="detail-section-heading">
-                        <div>
-                            <span class="section-eyebrow">Ciclos escolares</span>
-                            <h3>Tabla de proyección</h3>
-                        </div>
-                    </div>
-
-                    <div id="projectionTable" class="table-wrapper">
-                        <p class="empty-message">Selecciona un plantel para ver la tabla.</p>
-                    </div>
-                </section>
-
-                <section id="similarSection" class="detail-section">
-                    <div class="detail-section-heading">
-                        <div>
-                            <span class="section-eyebrow">Referencia</span>
-                            <h3>Planteles similares</h3>
-                        </div>
-                    </div>
-
-                    <div id="similarSchools">
-                        <p class="empty-message">Selecciona un plantel para consultar planteles similares.</p>
-                    </div>
-                </section>
-
-                <section id="schoolActionsSection" class="detail-section detail-actions">
-                    <button id="compareSchoolBtn" class="primary-button" type="button">
-                        <i class="fa-solid fa-code-compare" aria-hidden="true"></i>
-                        Agregar a comparación
-                    </button>
-
-                    <button id="downloadSchoolCsv" class="secondary-button" type="button">
-                        <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
-                        Descargar CSV
-                    </button>
-                </section>
+                <div class="detail-tab-panel active" data-detail-panel="summary">
+                    <section id="informationSection" class="detail-section">
+                        <div id="schoolInfo" class="empty-state"><i class="fa-solid fa-school-circle-check"></i><h3>Selecciona un plantel</h3><p>Haz clic en una zona o utiliza el buscador para consultar su proyección.</p></div>
+                    </section>
+                    <section id="schoolActionsSection" class="detail-section detail-actions">
+                        <button id="compareSchoolBtn" class="primary-button" type="button"><i class="fa-solid fa-code-compare"></i> Comparar plantel</button>
+                        <button id="downloadSchoolCsv" class="secondary-button" type="button"><i class="fa-solid fa-file-arrow-down"></i> Descargar CSV</button>
+                    </section>
+                </div>
+                <div class="detail-tab-panel" data-detail-panel="evolution">
+                    <section id="schoolChartSection" class="detail-section">
+                        <div class="detail-section-heading"><div><span class="section-eyebrow">Evolución temporal</span><h3>Proyección de matrícula</h3></div></div>
+                        <div class="chart-wrapper"><canvas id="chartMatricula"></canvas></div>
+                    </section>
+                    <section id="projectionSection" class="detail-section">
+                        <div class="detail-section-heading"><div><span class="section-eyebrow">Ciclos escolares</span><h3>Tabla de proyección</h3></div></div>
+                        <div id="projectionTable" class="table-wrapper"><p class="empty-message">Selecciona un plantel para ver la tabla.</p></div>
+                    </section>
+                </div>
+                <div class="detail-tab-panel" data-detail-panel="context">
+                    <section class="detail-section" id="conapoSection">
+                        <div class="detail-section-heading"><div><span class="section-eyebrow">Contexto de toda la alcaldía</span><h3>Matrícula y población CONAPO 0–14</h3></div></div>
+                        <p class="context-note"><i class="fa-solid fa-circle-info"></i> Estos valores corresponden a la alcaldía completa, no únicamente al plantel seleccionado.</p>
+                        <div id="conapoSummary" class="conapo-summary"><p class="empty-message">Selecciona una zona o plantel para consultar el contexto.</p></div>
+                        <div class="chart-wrapper"><canvas id="conapoChart"></canvas></div>
+                    </section>
+                    <section id="similarSection" class="detail-section">
+                        <div class="detail-section-heading"><div><span class="section-eyebrow">Referencia</span><h3>Planteles con matrícula proyectada parecida</h3></div></div>
+                        <p class="context-note">Mismo nivel y alcaldía, ordenados por cercanía a la matrícula del ciclo seleccionado.</p>
+                        <div id="similarSchools"><p class="empty-message">Selecciona un plantel para consultar esta referencia.</p></div>
+                    </section>
+                </div>
             </div>
         </aside>
+        <button id="mobileBackdrop" class="mobile-backdrop" type="button" aria-label="Cerrar filtros"></button>
     </main>
 
-    <footer class="footer">
-        <span>SIGPE-CDMX · Matrícula base: Estadística Oficial 911</span>
-        <span>Proyecciones 2024-2025 a 2035-2036</span>
-    </footer>
-
+    <footer class="footer"><span>SIGPE-CDMX · Matrícula base: Estadística Oficial 911</span><span>Proyecciones 2024-2025 a 2035-2036</span></footer>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script src="js/utils.js"></script>
-    <script src="js/charts.js"></script>
-    <script src="js/sidebar.js"></script>
-    <script src="js/search.js"></script>
-    <script src="js/filters.js"></script>
-    <script src="js/comparison.js"></script>
-    <script src="js/map.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/utils.js"></script><script src="js/charts.js"></script><script src="js/sidebar.js"></script><script src="js/search.js"></script><script src="js/filters.js"></script><script src="js/comparison.js"></script><script src="js/map.js"></script><script src="js/app.js"></script>
 </body>
 </html>
